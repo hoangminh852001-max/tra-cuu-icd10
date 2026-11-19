@@ -3,23 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tra cứu mã ICD-10 (Chuẩn Bộ Y tế VN)</title>
+  <title>Tra cứu & Gợi ý ICD-10 (Chuẩn Bộ Y tế VN)</title>
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
-    body { margin: 0; background: #f4f6f9; color: #1f2937; padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; background: #fff; border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); overflow: hidden; }
+    body { margin: 0; background: #f4f6f9; color: #1f2937; padding: 18px; }
+    .container { max-width: 960px; margin: 0 auto; background: #fff; border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.08); overflow: hidden; }
     .header { background: #0d6efd; color: #fff; padding: 16px 20px; }
     .header h1 { margin: 0; font-size: 20px; }
-    .header p { margin: 4px 0 0; font-size: 13px; opacity: 0.9; }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e5e7eb; }
+    .header p { margin: 4px 0 0; font-size: 13px; opacity: 0.92; }
+    .ai-box { padding: 14px 20px; background: #eff6ff; border-bottom: 1px solid #bfdbfe; }
+    .ai-title { font-size: 13px; font-weight: bold; color: #1e40af; margin-bottom: 8px; }
+    .ai-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ai-input { flex: 1; min-width: 240px; padding: 9px 12px; border: 1px solid #93c5fd; border-radius: 6px; font-size: 14px; background: #fff; }
+    .btn-ai { padding: 9px 16px; border: none; border-radius: 6px; background: #1d4ed8; color: #fff; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .btn-ai:hover { background: #1e40af; }
+    .ai-suggestions { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: #fff; border: 1px solid #93c5fd; color: #1e3a8a; padding: 6px 10px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+    .chip:hover { background: #dbeafe; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e5e7eb; }
     select, input[type="text"] { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
     select { min-width: 240px; background: #fff; }
     input[type="text"] { flex: 1; min-width: 220px; }
     .btn { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; }
     .btn:hover { background: #f1f5f9; }
     .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; font-size: 13px; color: #4b5563; border-bottom: 1px solid #e5e7eb; }
-    .list { max-height: 520px; overflow-y: auto; }
-    .item { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.12s; }
+    .list { max-height: 480px; overflow-y: auto; }
+    .item { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
     .item:hover { background: #eff6ff; }
     .code { display: inline-block; background: #dbeafe; color: #1d4ed8; font-weight: bold; padding: 3px 8px; border-radius: 4px; margin-right: 8px; font-size: 13px; }
     .name { font-weight: 600; font-size: 14px; }
@@ -30,20 +39,29 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>Tra cứu mã ICD-10 theo chuẩn Bộ Y tế Việt Nam</h1>
-      <p>Gom nhóm chấn thương & cơ quan • Tìm kiếm không dấu • Bấm vào dòng để sao chép mã</p>
+      <h1>Tra cứu & Gợi ý mã ICD-10 (Chuẩn Bộ Y tế VN)</h1>
+      <p>Gom nhóm chấn thương & cơ quan • Gợi ý mã theo mô tả lâm sàng • Bấm vào dòng để sao chép mã</p>
+    </div>
+
+    <div class="ai-box">
+      <div class="ai-title">Gợi ý mã nhanh theo mô tả lâm sàng (VD: "té cầu thang đau khớp gối", "đau ngực khó thở", "vết thương cẳng tay")</div>
+      <div class="ai-row">
+        <input id="aiInput" class="ai-input" type="text" placeholder="Nhập mô tả triệu chứng / chấn thương / chẩn đoán sơ bộ..." />
+        <button id="aiBtn" class="btn-ai">Gợi ý mã</button>
+      </div>
+      <div id="aiChips" class="ai-suggestions"></div>
     </div>
 
     <div class="toolbar">
       <select id="groupSelect"></select>
-      <input id="searchInput" type="text" placeholder="Nhập mã ICD-10 (VD: S72.0, I10) hoặc tên bệnh không dấu..." />
-      <button class="btn" id="importBtn">Nạp file JSON đầy đủ</button>
+      <input id="searchInput" type="text" placeholder="Tìm theo mã (S72.0, I10...) hoặc tên bệnh không dấu..." />
+      <button class="btn" id="importBtn">Nạp thêm JSON</button>
       <input id="fileInput" type="file" accept=".json" style="display:none" />
     </div>
 
     <div class="status-bar">
       <span id="countLabel">Đang tải...</span>
-      <span>Mẹo: Nhấn vào mã bệnh để copy nhanh</span>
+      <span>Lưu ý: Chỉ mang tính hỗ trợ tra cứu, đối chiếu danh mục chuẩn trước khi kê</span>
     </div>
 
     <div class="list" id="resultList"></div>
@@ -70,38 +88,54 @@
     ];
 
     const SEED_DATA = [
-      { code: "S00.9", name: "Chấn thương nông ở đầu, không đặc hiệu", chapter: "Chương XIX" },
-      { code: "S01.9", name: "Vết thương hở ở đầu, không đặc hiệu", chapter: "Chương XIX" },
-      { code: "S06.0", name: "Chấn động não", chapter: "Chương XIX" },
-      { code: "S13.4", name: "Bong gân và căng cơ cột sống cổ", chapter: "Chương XIX" },
-      { code: "S20.2", name: "Đụng dập thành ngực", chapter: "Chương XIX" },
-      { code: "S22.3", name: "Gãy xương sườn", chapter: "Chương XIX" },
-      { code: "S27.0", name: "Tràn khí màng phổi chấn thương", chapter: "Chương XIX" },
-      { code: "S30.1", name: "Đụng dập thành bụng", chapter: "Chương XIX" },
-      { code: "S32.5", name: "Gãy xương mu", chapter: "Chương XIX" },
-      { code: "S42.0", name: "Gãy xương đòn", chapter: "Chương XIX" },
-      { code: "S43.0", name: "Trật khớp vai", chapter: "Chương XIX" },
-      { code: "S52.5", name: "Gãy đầu dưới xương quay", chapter: "Chương XIX" },
-      { code: "S61.0", name: "Vết thương hở ngón tay không tổn thương móng", chapter: "Chương XIX" },
-      { code: "S72.0", name: "Gãy cổ xương đùi", chapter: "Chương XIX" },
-      { code: "S82.6", name: "Gãy mắt cá ngoài", chapter: "Chương XIX" },
-      { code: "S83.6", name: "Bong gân và căng dây chằng khớp gối", chapter: "Chương XIX" },
-      { code: "S93.4", name: "Bong gân và căng dây chằng cổ chân", chapter: "Chương XIX" },
-      { code: "I10", name: "Bệnh tăng huyết áp vô căn (nguyên phát)", chapter: "Chương IX" },
-      { code: "I20.9", name: "Đau thắt ngực, không đặc hiệu", chapter: "Chương IX" },
-      { code: "I21.9", name: "Nhồi máu cơ tim cấp, không đặc hiệu", chapter: "Chương IX" },
-      { code: "I50.9", name: "Suy tim, không đặc hiệu", chapter: "Chương IX" },
-      { code: "I63.9", name: "Nhồi máu não, không đặc hiệu", chapter: "Chương IX" },
-      { code: "J00", name: "Viêm mũi họng cấp [cảm thường]", chapter: "Chương X" },
-      { code: "J06.9", name: "Nhiễm trùng đường hô hấp trên cấp, không đặc hiệu", chapter: "Chương X" },
-      { code: "J18.9", name: "Viêm phổi, không đặc hiệu", chapter: "Chương X" },
-      { code: "K21.9", name: "Bệnh trào ngược dạ dày - thực quản không có viêm thực quản", chapter: "Chương XI" },
-      { code: "K29.7", name: "Viêm dạ dày, không đặc hiệu", chapter: "Chương XI" },
-      { code: "K35.8", name: "Viêm ruột thừa cấp, khác và không đặc hiệu", chapter: "Chương XI" },
-      { code: "E11.9", name: "Bệnh đái tháo đường không phụ thuộc insulin không có biến chứng", chapter: "Chương IV" },
-      { code: "G43.9", name: "Đau nửa đầu (Migraine), không đặc hiệu", chapter: "Chương VI" },
-      { code: "M54.5", name: "Đau thắt lưng", chapter: "Chương XIII" },
-      { code: "N39.0", name: "Nhiễm trùng đường tiết niệu, không xác định vị trí", chapter: "Chương XIV" }
+      { code: "S00.9", name: "Chấn thương nông ở đầu, không đặc hiệu", chapter: "Chương XIX", tags: ["dau", "te", "va dap", "chan thuong"] },
+      { code: "S01.9", name: "Vết thương hở ở đầu, không đặc hiệu", chapter: "Chương XIX", tags: ["dau", "chay mau", "vet thuong"] },
+      { code: "S02.5", name: "Vỡ răng", chapter: "Chương XIX", tags: ["rang", "mieng", "gay", "vo"] },
+      { code: "S06.0", name: "Chấn động não", chapter: "Chương XIX", tags: ["dau", "choang", "non", "te", "nao"] },
+      { code: "S13.4", name: "Bong gân và căng cơ cột sống cổ", chapter: "Chương XIX", tags: ["co", "dau co", "bong gan"] },
+
+      { code: "S20.2", name: "Đụng dập thành ngực", chapter: "Chương XIX", tags: ["nguc", "dau nguc", "va dap"] },
+      { code: "S22.3", name: "Gãy xương sườn", chapter: "Chương XIX", tags: ["nguc", "suon", "dau nguc", "gay"] },
+      { code: "S27.0", name: "Tràn khí màng phổi chấn thương", chapter: "Chương XIX", tags: ["nguc", "kho tho", "phoi"] },
+
+      { code: "S30.1", name: "Đụng dập thành bụng", chapter: "Chương XIX", tags: ["bung", "dau bung", "va dap"] },
+      { code: "S32.5", name: "Gãy xương mu", chapter: "Chương XIX", tags: ["chau", "ha vi", "gay"] },
+      { code: "S33.5", name: "Bong gân và căng cơ cột sống thắt lưng", chapter: "Chương XIX", tags: ["that lung", "dau lung", "bong gan"] },
+
+      { code: "S42.0", name: "Gãy xương đòn", chapter: "Chương XIX", tags: ["vai", "xuong don", "gay", "chi tren"] },
+      { code: "S43.0", name: "Trật khớp vai", chapter: "Chương XIX", tags: ["vai", "trat khop", "dau vai", "chi tren"] },
+      { code: "S49.9", name: "Tổn thương không xác định ở vai và/hoặc cánh tay trên", chapter: "Chương XIX", tags: ["vai", "canh tay", "chi tren"] },
+      { code: "S52.5", name: "Gãy đầu dưới xương quay", chapter: "Chương XIX", tags: ["co tay", "cang tay", "gay", "chi tren"] },
+      { code: "S61.0", name: "Vết thương hở ngón tay không tổn thương móng", chapter: "Chương XIX", tags: ["ngon tay", "tay", "vet thuong", "chi tren"] },
+      { code: "S62.6", name: "Gãy xương đốt bàn ngón khác", chapter: "Chương XIX", tags: ["ngon tay", "ban tay", "gay", "chi tren"] },
+
+      { code: "S72.0", name: "Gãy cổ xương đùi", chapter: "Chương XIX", tags: ["dui", "hang", "gay", "te", "chi duoi"] },
+      { code: "S80.0", name: "Đụng dập đầu gối", chapter: "Chương XIX", tags: ["goi", "dau goi", "va dap", "chi duoi"] },
+      { code: "S82.6", name: "Gãy mắt cá ngoài", chapter: "Chương XIX", tags: ["co chan", "mat ca", "gay", "chi duoi"] },
+      { code: "S83.6", name: "Bong gân và căng dây chằng khớp gối", chapter: "Chương XIX", tags: ["goi", "khop goi", "bong gan", "chi duoi"] },
+      { code: "S93.4", name: "Bong gân và căng dây chằng cổ chân", chapter: "Chương XIX", tags: ["co chan", "bong gan", "chi duoi"] },
+
+      { code: "I10", name: "Bệnh tăng huyết áp vô căn (nguyên phát)", chapter: "Chương IX", tags: ["huyet ap", "tang huyet ap", "dau dau", "tim mach"] },
+      { code: "I20.9", name: "Đau thắt ngực, không đặc hiệu", chapter: "Chương IX", tags: ["dau nguc", "that nguc", "tim"] },
+      { code: "I21.9", name: "Nhồi máu cơ tim cấp, không đặc hiệu", chapter: "Chương IX", tags: ["dau nguc", "kho tho", "tim"] },
+      { code: "I50.9", name: "Suy tim, không đặc hiệu", chapter: "Chương IX", tags: ["kho tho", "phu", "tim"] },
+      { code: "I63.9", name: "Nhồi máu não, không đặc hiệu", chapter: "Chương IX", tags: ["yeu liet", "noi ngong", "nao", "dot quy"] },
+
+      { code: "J00", name: "Viêm mũi họng cấp [cảm thường]", chapter: "Chương X", tags: ["so mui", "ngat mui", "dau hong", "ho"] },
+      { code: "J06.9", name: "Nhiễm trùng đường hô hấp trên cấp, không đặc hiệu", chapter: "Chương X", tags: ["ho", "sot", "dau hong", "viem hong"] },
+      { code: "J18.9", name: "Viêm phổi, không đặc hiệu", chapter: "Chương X", tags: ["sot", "ho", "kho tho", "phoi"] },
+      { code: "J45.9", name: "Hen, không đặc hiệu", chapter: "Chương X", tags: ["kho khe", "kho tho", "hen suyen"] },
+
+      { code: "K21.9", name: "Bệnh trào ngược dạ dày - thực quản không có viêm thực quản", chapter: "Chương XI", tags: ["ot chua", "nong rat", "da day", "trao nguoc"] },
+      { code: "K29.7", name: "Viêm dạ dày, không đặc hiệu", chapter: "Chương XI", tags: ["dau thuong vi", "dau da day", "buon non"] },
+      { code: "K35.8", name: "Viêm ruột thừa cấp, khác và không đặc hiệu", chapter: "Chương XI", tags: ["dau bung", "hoc chau phai", "sot", "ruot thua"] },
+
+      { code: "A09.9", name: "Viêm dạ dày và ruột nhiễm trùng và không đặc hiệu khác", chapter: "Chương I", tags: ["tieu chay", "di ngoai", "dau bung"] },
+      { code: "A91", name: "Sốt xuất huyết do virus Dengue", chapter: "Chương I", tags: ["sot cao", "xuat huyet", "dau nhuc"] },
+      { code: "E11.9", name: "Bệnh đái tháo đường không phụ thuộc insulin không có biến chứng", chapter: "Chương IV", tags: ["tieu duong", "duong huyet", "noi tiet"] },
+      { code: "G43.9", name: "Đau nửa đầu (Migraine), không đặc hiệu", chapter: "Chương VI", tags: ["dau nua dau", "dau dau", "buon non"] },
+      { code: "M54.5", name: "Đau thắt lưng", chapter: "Chương XIII", tags: ["dau lung", "that lung", "cot song"] },
+      { code: "N39.0", name: "Nhiễm trùng đường tiết niệu, không xác định vị trí", chapter: "Chương XIV", tags: ["tieu buot", "tieu rat", "tieu nhieu"] }
     ];
 
     function removeTone(str = "") {
@@ -111,11 +145,11 @@
     function detectGroup(item) {
       const code = (item.code || "").toUpperCase();
       const name = removeTone(item.name || "");
-      if (/^S0[0-9]|^S1[0-9]/.test(code) || (/dau|mat|co|song co/.test(name) && /chan thuong|gay|vet thuong|bong gan|trat/.test(name))) return "TRAUMA_HEAD_NECK";
-      if (/^S2[0-9]/.test(code) || (/nguc|xuong suon|mang phoi/.test(name) && /chan thuong|gay|vet thuong|tran khi|tran mau/.test(name))) return "TRAUMA_THORAX";
-      if (/^S3[0-9]/.test(code) || (/bung|that lung|chau|gan|lach|than/.test(name) && /chan thuong|gay|vet thuong|vo/.test(name))) return "TRAUMA_ABDOMEN";
-      if (/^S4[0-9]|^S5[0-9]|^S6[0-9]/.test(code) || (/vai|canh tay|khuyu|cang tay|co tay|ban tay|ngon tay|xuong don/.test(name) && /chan thuong|gay|vet thuong|bong gan|trat/.test(name))) return "TRAUMA_UPPER_LIMB";
-      if (/^S7[0-9]|^S8[0-9]|^S9[0-9]/.test(code) || (/dui|goi|cang chan|co chan|ban chan|ngon chan|mat ca|got/.test(name) && /chan thuong|gay|vet thuong|bong gan|trat/.test(name))) return "TRAUMA_LOWER_LIMB";
+      if (/^S0[0-9]|^S1[0-9]/.test(code)) return "TRAUMA_HEAD_NECK";
+      if (/^S2[0-9]/.test(code)) return "TRAUMA_THORAX";
+      if (/^S3[0-9]/.test(code)) return "TRAUMA_ABDOMEN";
+      if (/^S4[0-9]|^S5[0-9]|^S6[0-9]/.test(code)) return "TRAUMA_UPPER_LIMB";
+      if (/^S7[0-9]|^S8[0-9]|^S9[0-9]/.test(code)) return "TRAUMA_LOWER_LIMB";
       if (/^I[0-9]{2}/.test(code)) return "CARDIO";
       if (/^J[0-9]{2}/.test(code)) return "RESP";
       if (/^K[0-9]{2}/.test(code)) return "DIGEST";
@@ -124,6 +158,7 @@
       if (/^G[0-9]{2}/.test(code)) return "NEURO";
       if (/^M[0-9]{2}/.test(code)) return "MUSCULO";
       if (/^N[0-9]{2}/.test(code)) return "GENITO";
+      if (name.includes("nguc")) return "TRAUMA_THORAX";
       return "OTHER";
     }
 
@@ -132,17 +167,20 @@
         code: String(x.code || "").trim(),
         name: String(x.name || "").trim(),
         chapter: String(x.chapter || "").trim(),
+        tags: Array.isArray(x.tags) ? x.tags : [],
         group: x.group || detectGroup(x)
       }));
     }
 
-    let db = enrich(JSON.parse(localStorage.getItem("icd10_web_db") || "null") || SEED_DATA);
+    let db = enrich(JSON.parse(localStorage.getItem("icd10_web_db_v2") || "null") || SEED_DATA);
 
     const groupSelect = document.getElementById("groupSelect");
     const searchInput = document.getElementById("searchInput");
     const resultList = document.getElementById("resultList");
     const countLabel = document.getElementById("countLabel");
     const toast = document.getElementById("toast");
+    const aiInput = document.getElementById("aiInput");
+    const aiChips = document.getElementById("aiChips");
 
     groupSelect.innerHTML = GROUPS.map(g => `<option value="${g.id}">${g.label}</option>`).join("");
 
@@ -152,14 +190,19 @@
       setTimeout(() => { toast.style.display = "none"; }, 1800);
     }
 
-    function render() {
-      const gId = groupSelect.value;
-      const kw = removeTone(searchInput.value.trim());
-      const rows = db.filter(item => {
+    function copyCode(code, name) {
+      navigator.clipboard?.writeText(code);
+      showToast(`Đã sao chép mã: ${code} (${name})`);
+    }
+
+    function render(customList = null) {
+      const rows = customList || db.filter(item => {
+        const gId = groupSelect.value;
+        const kw = removeTone(searchInput.value.trim());
         const okGroup = gId === "ALL" || item.group === gId;
         if (!okGroup) return false;
         if (!kw) return true;
-        return removeTone(item.code).includes(kw) || removeTone(item.name).includes(kw);
+        return removeTone(item.code).includes(kw) || removeTone(item.name).includes(kw) || item.tags.some(t => removeTone(t).includes(kw));
       });
 
       countLabel.textContent = `Hiển thị ${Math.min(rows.length, 100)} / ${rows.length} mã (Tổng kho: ${db.length} mã)`;
@@ -180,17 +223,46 @@
       }).join("");
 
       resultList.querySelectorAll(".item").forEach(el => {
-        el.addEventListener("click", () => {
-          const code = el.getAttribute("data-code");
-          const name = el.getAttribute("data-name");
-          navigator.clipboard?.writeText(code);
-          showToast(`Đã sao chép mã: ${code} (${name})`);
-        });
+        el.addEventListener("click", () => copyCode(el.getAttribute("data-code"), el.getAttribute("data-name")));
       });
     }
 
-    groupSelect.addEventListener("change", render);
-    searchInput.addEventListener("input", render);
+    function runAiSuggestion() {
+      const q = removeTone(aiInput.value.trim());
+      aiChips.innerHTML = "";
+      if (!q) {
+        render();
+        return;
+      }
+      const words = q.split(/\s+/).filter(Boolean);
+      const scored = db.map(item => {
+        const hay = removeTone(`${item.code} ${item.name} ${item.tags.join(" ")}`);
+        let score = 0;
+        words.forEach(w => { if (hay.includes(w)) score += 1; });
+        return { item, score };
+      }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+
+      const top = scored.slice(0, 6).map(x => x.item);
+      if (!top.length) {
+        aiChips.innerHTML = `<span style="font-size:12px;color:#6b7280;">Chưa tìm thấy gợi ý khớp từ mô tả này. Thử từ khóa ngắn gọn hơn (VD: gối, vai, ngực, sốt, ho).</span>`;
+        return;
+      }
+
+      top.forEach(item => {
+        const chip = document.createElement("button");
+        chip.className = "chip";
+        chip.textContent = `${item.code} - ${item.name}`;
+        chip.addEventListener("click", () => copyCode(item.code, item.name));
+        aiChips.appendChild(chip);
+      });
+
+      render(scored.map(x => x.item));
+    }
+
+    document.getElementById("aiBtn").addEventListener("click", runAiSuggestion);
+    aiInput.addEventListener("keydown", e => { if (e.key === "Enter") runAiSuggestion(); });
+    groupSelect.addEventListener("change", () => render());
+    searchInput.addEventListener("input", () => render());
 
     document.getElementById("importBtn").addEventListener("click", () => document.getElementById("fileInput").click());
     document.getElementById("fileInput").addEventListener("change", e => {
@@ -204,10 +276,10 @@
             alert("File JSON cần là mảng [{code, name, chapter?}].");
             return;
           }
-          db = enrich(parsed);
-          localStorage.setItem("icd10_web_db", JSON.stringify(db));
+          db = enrich(db.concat(parsed));
+          localStorage.setItem("icd10_web_db_v2", JSON.stringify(db));
           render();
-          showToast(`Đã nạp ${db.length} mã ICD-10!`);
+          showToast(`Đã gộp thêm! Tổng hiện có: ${db.length} mã`);
         } catch (err) {
           alert("Lỗi đọc file JSON: " + err.message);
         }
